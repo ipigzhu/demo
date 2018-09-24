@@ -5,4 +5,9 @@ migrations/
 img/
 project/static/bootstrap/
 project/static/upload/
+<<<<<<< HEAD
 
+=======
+*.egg-info
+imgs/
+>>>>>>> e734474fdada652cad0c48e73c1fde2286ce5afb
