@@ -1,0 +1,9 @@
+.idea/
+__pycache__/
+migrations/
+*.py[cod]
+img/
+project/static/bootstrap/
+project/static/upload/
+*.egg-info
+imgs/
