@@ -5,3 +5,5 @@ migrations/
 img/
 project/static/bootstrap/
 project/static/upload/
+*.egg-info
+imgs/
