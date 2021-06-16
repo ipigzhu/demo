@@ -1,0 +1,139 @@
+[mysqld]
+basedir = /application/mysql
+datadir = /data/mysql/data
+
+socket = /data/mysql/mysql.sock
+pid-file=/data/mysql/mysqld.pid
+log-error = /var/log/mysqld.err
+# log-error-verbosity=2
+
+
+character-set-server=utf8
+port = 3306
+skip-name-resolve=1
+
+gtid-mode=on
+enforce-gtid-consistency=true
+
+server-id = 1
+log-bin = /data/mysql/binlog/mysql-bin
+binlog_format=statement
+max_binlog_size = 2M
+expire_logs_days = 7
+binlog_cache_size = 1M
+max_binlog_cache_size = 1M
+
+
+relay-log = /data/mysql/binlog/relay-bin
+relay-log-info-file = /data/mysql/binlog/relay-log.info
+log-slave-updates = 1
+# ------- 复制中从库优化参数 ---------
+slave-parallel-type=LOGICAL_CLOCK  			# 控制slave-sql线程并发回放执行日志
+slave-parallel-workers=16					# cpu核心数作为标准
+master_info_repository=table				# 把master.info信息写到数据库，减少io
+relay_log_info_repository=table
+ 
+
+# binlog_ignore_db = mysql
+# binlog_ignore_db = performance_schema
+# binlog_ignore_db = information_schema
+# slave-skip-errors = 1032,1062
+
+# --------------------双一设置--------------------
+# binlog写策略
+sync_binlog = 1  
+
+# redolog写策略
+# 最高安全模式
+innodb_flush_log_at_trx_commit=1
+innodb_flush_method=O_DIRECT
+# 最高性能:
+innodb_flush_log_at_trx_commit=0
+Innodb_flush_method=fsync
+
+# -------------------- 优化参数 -------------------
+max_connections = 1024						# 最大连接数 ★★★★★★★
+# back_log=100	
+
+thread_cache_size = 100						# 预先开启100个连接线程(线程池)
+
+innodb_buffer_pool_size = 32M				# 数据和索引的缓冲大小  ★★★★★★★★
+
+max_allowed_packet = 18M					# 控制网络数据包传输大小，见《知识点收集：通信方式》 ★
+
+innodb_max_dirty_pages_pct = 90				# 脏块写策略
+
+
+wait_timeout = 60							# 连接等到超时时长	
+interactive_timeout = 1200
+
+max_connect_errors = 3000					# 允许客户端连接失败最大累积次数。超过这个值，可以用flush hosts刷新去除
+
+
+key_buffer_size = 16M						
+
+
+
+innodb_thread_concurrency = 0				# 并发线程的个数。0表示不限制
+
+bulk_insert_buffer_size = 1M				# 如果有大量批量插入操作，可以设置这个插入缓存。视频说可以考虑用其他引擎tokuDB、myrocks
+
+
+innodb_print_all_deadlocks = 				# 记录死锁事件到日志
+
+
+open_files_limit = 1024						# MySQLd能打开文件的最大个数,如果出现too mant open files就需要调整该值
+
+#-- 这四个参数对于每个连接是独享的，不要太大 ----
+sort_buffer_size = 1M						# 排序缓冲区。排序的时候分配的内存(语句中出现:order by、group by、distinct、union)		
+join_buffer_size = 1M						# 关联查询缓冲区大小。见笔记《知识点收集-执行计划-BNL算法》
+read_buffer_size = 1M						# 必须是4K倍数。读入缓冲区大小
+read_rnd_buffer_size = 1M					# 索引缓冲区大小
+
+
+# ------------------------- ibdata配置 --------------
+innodb_file_per_table = 1
+innodb_data_file_path = ibdata1:20M:autoextend
+innodb_autoextend_increment
+innodb_data_home_dir
+
+
+# ---------- redolog日志(ib_logfile)配置 ------------
+innodb_log_files_in_group = 2
+innodb_log_file_size = 50M
+innodb_log_buffer_size = 2M
+ 
+
+# 三个查询缓存参数
+首先，开启缓存的话，服务器会消耗大量的内存空间
+其次mysql自带的缓存应用场景有限，第一个它要求SQL语句必须一模一样，多一个空格，大小写不同都被认为是不同的的SQL
+第二个表的任何一条数据变化，这张表所有缓存都会失效，所以对于有大量数据更新的应用，也不适合。
+所以缓存这一块，交给ORM框架,比如MyBatis默认开启了一级缓存，或者第三方缓存服务，比如Redis
+而且在5.7中，查询缓存缺省关闭，在8.0中，查询缓存已经被移除 https://blog.csdn.net/kadwf123/article/details/82081902
+query_cache_type = 0			# 查询缓存开关
+query_cache_size = 0			# 查询缓存的内存大小	
+query_cache_limit = 4M			# 单个结果集所被允许缓存的最大值 
+query_cache_min_res_unit = 2k	# 每个被缓存的结果集要占用的最小内存
+
+
+# 控制内存临时表的大小。两个一致即可
+max_heap_table_size = 2M
+tmp_table_size = 2M
+
+ 
+sync-master-info = 1  
+innodb_lock_wait_timeout = 120
+external-locking = FALSE
+thread_stack = 192K
+
+# -------- 下面只在5.5可用 ---------
+# innodb_additional_mem_pool_size = 4M
+# innodb_file_io_threads = 4
+# table_cache = 614
+# thread_concurrency = 2
+
+[mysql]
+no-auto-rehash
+
+[client]
+socket = /data/mysql/mysql.sock
